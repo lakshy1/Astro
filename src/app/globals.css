@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+:root {
+  --background: #08090d;
+  --foreground: #ededef;
+  --surface: #101217;
+  --surface-hover: #15181f;
+  --border: #1e212b;
+  --border-hover: #323746;
+  --gold-primary: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-muted: rgba(212, 175, 55, 0.15);
+  --text-muted: #8e919e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3D Transform Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Subtle Architectural Grid Lines */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Precision luxury card styling */
+.luxury-card {
+  background-color: #101217;
+  border: 1px solid #1e212b;
+  transition: border-color 0.25s ease, background-color 0.25s ease, transform 0.25s ease;
+}
+
+.luxury-card:hover {
+  background-color: #14171e;
+  border-color: #2f3444;
+}
+
+/* Guaranteed Visible High-Contrast Gold CTA Button */
+.btn-gold {
+  background-color: #f59e0b !important;
+  color: #090a0f !important;
+  font-weight: 700 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.25) !important;
+}
+
+.btn-gold:hover {
+  background-color: #fbbf24 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px 0 rgba(245, 158, 11, 0.38) !important;
+}
+
+.btn-gold:active {
+  transform: translateY(0px) !important;
+}
+
+/* Fallback protection for legacy button classes */
+.shimmer-btn {
+  background-color: #f59e0b !important;
+  color: #090a0f !important;
+  font-weight: 700 !important;
+}
+
+/* Refined Keyframe Animations */
+@keyframes celestial-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes celestial-orbit-reverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-orbit-slow {
+  animation: celestial-orbit 90s linear infinite;
+}
+
+.animate-orbit-reverse {
+  animation: celestial-orbit-reverse 75s linear infinite;
+}
+
+.animate-subtle-float {
+  animation: subtle-float 5s ease-in-out infinite;
+}
+
+/* Crisp Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08090d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e212b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #323746;
+}
