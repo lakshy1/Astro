@@ -63,10 +63,6 @@ export default function TarotInteractive({ onOpenConsultation }: TarotInteractiv
     );
   };
 
-  const revealAll = () => {
-    setCards((prev) => prev.map((c) => ({ ...c, revealed: true })));
-  };
-
   const shuffleDeck = () => {
     setShuffling(true);
     setCards((prev) => prev.map((c) => ({ ...c, revealed: false })));
@@ -119,134 +115,90 @@ export default function TarotInteractive({ onOpenConsultation }: TarotInteractiv
     }, 500);
   };
 
-  return (
-    <section id="tarot" className="py-24 relative overflow-hidden bg-[#08090d] border-b border-[#1c1f2a]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#12141c] border border-[#232734] text-[#d4af37] text-xs font-semibold mb-3">
-            <span>✦</span>
-            <span>3D Interactive Arcana Divination</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            3-Card Tarot Studio
-          </h2>
-          <p className="text-[#8e919e] text-sm sm:text-base mt-2">
-            Center your mind on an important question. Click each 3D card to flip and unveil your Past Roots, Present Dynamics, and Future Trajectory.
-          </p>
+  const POS_LABEL: Record<string, string> = { Past: "Past", Present: "Present", Future: "Future" };
 
-          {/* Action triggers */}
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <button
-              onClick={shuffleDeck}
-              disabled={shuffling}
-              className="px-4 py-2 rounded-lg bg-[#12141c] hover:bg-[#181a24] border border-[#232734] text-xs font-medium text-white transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <span className={shuffling ? "animate-spin" : ""}>↻</span>
-              <span>{shuffling ? "Shuffling Cards..." : "Shuffle & Deal New Spread"}</span>
+  return (
+    <section id="tarot" className="section section-dark">
+      <div className="wrap">
+        <div className="mb-10 max-w-2xl">
+          <h2 className="h-section text-white">3-card tarot reading</h2>
+          <p className="sub">Think of a question, draw three cards, then tap each one to reveal your past, present and future.</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button type="button" onClick={shuffleDeck} disabled={shuffling} className="btn btn-brand">
+              {shuffling ? "Drawing…" : "Draw 3 cards"}
             </button>
-            <button
-              onClick={revealAll}
-              className="px-4 py-2 rounded-lg bg-[#181b24] hover:bg-[#202432] border border-[#2e3446] text-xs font-medium text-zinc-200 transition-all cursor-pointer"
-            >
-              Reveal All 3 Cards
+            <button type="button" onClick={() => setCards((prev) => prev.map((c) => ({ ...c, revealed: false })))} className="btn btn-outline">
+              Reset
             </button>
           </div>
         </div>
 
-        {/* 3D Cards Spread Container */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto perspective-1000">
+        <div className="perspective-1000 mx-auto grid max-w-4xl gap-10 md:grid-cols-3 md:gap-6">
           {cards.map((card) => (
             <div key={card.id} className="flex flex-col items-center">
-              {/* Position Header Tag */}
-              <div className="mb-3 px-3 py-1 rounded-md bg-[#101217] border border-[#1e212b] text-[11px] font-medium text-[#8e919e]">
-                {card.position === "Past" && "1. Past Karma & Roots"}
-                {card.position === "Present" && "2. Present Energies"}
-                {card.position === "Future" && "3. Future Trajectory"}
-              </div>
-
-              {/* 3D Flip Card */}
-              <div
+              <p className="mb-3 text-base font-bold text-white">{POS_LABEL[card.position]}</p>
+              <button
+                type="button"
                 onClick={() => flipCard(card.id)}
-                className={`relative w-64 h-96 rounded-2xl cursor-pointer preserve-3d transition-transform duration-700 shadow-xl hover:scale-102 ${
-                  card.revealed ? "rotate-y-180" : ""
-                }`}
-                style={{
-                  transformStyle: "preserve-3d",
-                  transform: card.revealed ? "rotateY(180deg)" : "rotateY(0deg)",
-                }}
+                aria-pressed={card.revealed}
+                aria-label={card.revealed ? `${card.position}: ${card.name}. Tap to hide.` : `${card.position} card, face down. Tap to reveal.`}
+                className="relative h-96 w-full max-w-64 cursor-pointer rounded-2xl border-0 bg-transparent p-0 transition-transform duration-700 preserve-3d"
+                style={{ transformStyle: "preserve-3d", transform: card.revealed ? "rotateY(180deg)" : "rotateY(0deg)" }}
               >
-                {/* Card Back Face (Architectural Geometric Design) */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl bg-[#101218] border border-[#272b38] p-5 flex flex-col items-center justify-between shadow-2xl backface-hidden">
-                  <div className="w-full flex justify-between text-[#d4af37]/40 text-xs font-mono">
-                    <span>✦</span>
-                    <span>✦</span>
-                  </div>
-
-                  <div className="flex flex-col items-center text-center p-4">
-                    <div className="w-16 h-16 rounded-full border border-[#2b3040] flex items-center justify-center bg-[#151722] mb-4">
-                      <svg className="w-7 h-7 text-[#d4af37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M12 3v18M3 12h18M7.05 7.05l9.9 9.9M7.05 16.95l9.9-9.9" />
-                      </svg>
-                    </div>
-                    <p className="text-[11px] font-bold tracking-widest text-[#d4af37] uppercase">
-                      Tap To Flip
-                    </p>
-                    <p className="text-[10px] text-[#8e919e] mt-0.5">Arcana Divination</p>
-                  </div>
-
-                  <div className="w-full flex justify-between text-[#d4af37]/40 text-xs font-mono">
-                    <span>✦</span>
-                    <span>✦</span>
-                  </div>
-                </div>
-
-                {/* Card Front Face (Revealed Tarot Card) */}
-                <div
-                  className="absolute inset-0 w-full h-full rounded-2xl bg-[#12141c] border border-[#303648] p-5 flex flex-col justify-between shadow-2xl backface-hidden"
+                <span className="backface-hidden absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border border-line-strong bg-[radial-gradient(circle_at_50%_40%,#1b2658_0%,#0b1130_70%)]">
+                  <span className="absolute inset-3 rounded-xl border border-brand/50" aria-hidden="true" />
+                  <span className="absolute inset-[18px] rounded-lg border border-brand/20" aria-hidden="true" />
+                  {/* Card back: sun, crescent moon and zodiac wheel in gold leaf */}
+                  <svg width="150" height="150" viewBox="0 0 150 150" fill="none" stroke="var(--brand)" aria-hidden="true">
+                    <circle cx="75" cy="75" r="62" strokeWidth="1.2" />
+                    <circle cx="75" cy="75" r="50" strokeWidth="0.6" opacity=".7" />
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const a = (i * Math.PI) / 6;
+                      return (
+                        <line key={i} x1={(75 + Math.cos(a) * 50).toFixed(2)} y1={(75 + Math.sin(a) * 50).toFixed(2)} x2={(75 + Math.cos(a) * 62).toFixed(2)} y2={(75 + Math.sin(a) * 62).toFixed(2)} strokeWidth="0.8" />
+                      );
+                    })}
+                    <circle cx="75" cy="75" r="16" fill="var(--brand)" fillOpacity=".15" strokeWidth="1.2" />
+                    {Array.from({ length: 8 }, (_, i) => {
+                      const a = (i * Math.PI) / 4;
+                      return (
+                        <line key={i} x1={(75 + Math.cos(a) * 21).toFixed(2)} y1={(75 + Math.sin(a) * 21).toFixed(2)} x2={(75 + Math.cos(a) * (i % 2 ? 30 : 40)).toFixed(2)} y2={(75 + Math.sin(a) * (i % 2 ? 30 : 40)).toFixed(2)} strokeWidth="1.2" strokeLinecap="round" />
+                      );
+                    })}
+                  </svg>
+                  <svg className="absolute top-7" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 3a9 9 0 1 0 6 15.5A8 8 0 0 1 15 3Z" fill="var(--brand)" />
+                  </svg>
+                  <svg className="absolute bottom-7" width="16" height="16" viewBox="0 0 14 14" aria-hidden="true">
+                    <path d="M7 0l1.6 5.4L14 7l-5.4 1.6L7 14l-1.6-5.4L0 7l5.4-1.6Z" fill="var(--brand)" />
+                  </svg>
+                </span>
+                <span
+                  className="backface-hidden absolute inset-0 flex flex-col rounded-2xl border border-[rgba(217,178,95,0.55)] bg-[linear-gradient(160deg,#16204a_0%,#0b1130_65%,#1a1630_100%)] p-5 text-left text-ink shadow-[0_0_40px_-12px_rgba(217,178,95,0.45)]"
                   style={{ transform: "rotateY(180deg)" }}
                 >
-                  <div>
-                    <div className="flex items-center justify-between pb-2 border-b border-[#1e212b]">
-                      <span className="text-[10px] font-bold text-[#d4af37] uppercase tracking-wider">
-                        {card.arcana}
-                      </span>
-                      <span className="text-xs font-serif text-[#d4af37] font-semibold">{card.numeral}</span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white mt-3 leading-tight">
-                      {card.name}
-                    </h3>
-                    <p className="text-[11px] font-medium text-[#b0b3bf] mt-1">
-                      {card.keywords}
-                    </p>
-
-                    <p className="text-xs text-zinc-300 mt-4 leading-relaxed">
-                      {card.meaning}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-[#1e212b] flex items-center justify-between text-[10px] text-[#8e919e]">
-                    <span>● Verified Archetype</span>
-                    <span>Tap to flip back</span>
-                  </div>
-                </div>
-              </div>
+                  <span className="flex items-center justify-between border-b border-line pb-2 text-sm text-muted">
+                    <span>{card.arcana}</span>
+                    <span className="font-semibold text-ink">{card.numeral}</span>
+                  </span>
+                  <span className="mt-4 text-2xl font-extrabold leading-tight text-aurora">{card.name}</span>
+                  <span className="mt-2 text-sm font-semibold text-brand-ink">Upright: {card.keywords.replace(/ • /g, ", ")}</span>
+                  <span className="mt-3 text-sm leading-relaxed text-ink-2">{card.meaning.replace(/^In your \w+: /, "")}</span>
+                </span>
+              </button>
+              {card.revealed && (
+                <p className="mt-4 max-w-64 text-center text-[0.9375rem] text-ink-2">
+                  <span className="font-semibold text-white">{card.name}.</span> {card.meaning.replace(/^In your \w+: /, "")}
+                </p>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Tarot Consultation CTA */}
-        <div className="mt-14 max-w-xl mx-auto p-5 rounded-2xl bg-[#101217] border border-[#1e212b] text-center">
-          <p className="text-xs text-zinc-300">
-            Need in-depth guidance on your personal spread? Consult a certified Tarot master.
-          </p>
-          <button
-            onClick={() => onOpenConsultation?.("Certified Tarot Master")}
-            className="mt-3 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-bold cursor-pointer shadow-md shadow-amber-400/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Connect with Tarot Master Now &rarr;
+        <div className="mx-auto mt-12 flex max-w-xl flex-col items-center gap-3 text-center">
+          <p className="text-base text-ink-2">Want a reading on your own question? Talk to a tarot reader.</p>
+          <button type="button" onClick={() => onOpenConsultation?.("Certified Tarot Master")} className="btn btn-outline">
+            Talk to a tarot reader
           </button>
         </div>
       </div>

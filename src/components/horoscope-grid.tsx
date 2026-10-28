@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 interface HoroscopeGridProps {
   onOpenConsultation?: (astrologerName?: string) => void;
@@ -24,9 +24,50 @@ interface RashiData {
   prediction: string;
 }
 
+const PERIODS = ["Today", "Tomorrow", "Weekly", "Monthly"] as const;
+
+const SWATCH: Record<string, string> = {
+  "Crimson Red": "#c2272d",
+  "Emerald Green": "#0f7a55",
+  "Warm Amber": "#e09a00",
+  "Pearl White": "#f1ede6",
+  "Saffron Gold": "#f4a300",
+  "Forest Green": "#2d5a3d",
+  "Rose Quartz": "#f0b6c2",
+  "Deep Maroon": "#6b1a2a",
+  "Royal Gold": "#d4a017",
+  "Midnight Slate": "#2f3a4f",
+  "Electric Blue": "#1e6bff",
+  "Ocean Teal": "#12878a",
+};
+
+// Short per-area lines: [love, career, health, money]
+const LINES: Record<string, [string, string, string, string]> = {
+  Aries: ["Warmth returns at home; speak calmly and listen first.", "Promotion talks and new contracts move forward.", "Energy is high; channel it into a workout.", "Steady gains; avoid impulse buys."],
+  Taurus: ["Venus deepens bonds with a partner.", "Steady progress; a senior notices your work.", "Good stamina; keep meals light.", "Earlier investments show returns."],
+  Gemini: ["Playful conversation lifts the mood.", "Strong day for pitches and negotiations.", "Rest your eyes from screens.", "Hold off on large commitments."],
+  Cancer: ["Intuition guides you to the right words.", "Trust your instinct in team decisions.", "Emotionally balanced; evening calm helps.", "A good day to settle family finances."],
+  Leo: ["Generosity wins hearts today.", "Authority shines in reviews and meetings.", "Vitality is strong; stay hydrated.", "Income prospects look bright."],
+  Virgo: ["Loosen up; spontaneity helps more than analysis.", "Detailed work earns praise.", "Routine habits keep you well.", "Careful budgeting pays off."],
+  Libra: ["Harmony and romance are in the air.", "Joint deals and legal matters go smoothly.", "Well balanced; a walk refreshes you.", "Wise advice improves a money decision."],
+  Scorpio: ["Honest talk deepens trust.", "You spot leverage others miss.", "Good recovery; avoid overwork.", "Lucrative terms emerge; clear old dues."],
+  Sagittarius: ["Shared travel plans bring joy.", "Mentors and partners open doors.", "Excellent vitality; stay active.", "Fortune favours bold, planned moves."],
+  Capricorn: ["Show care in small gestures.", "Discipline brings visible results.", "Stretch often; mind your posture.", "Slow, durable gains build security."],
+  Aquarius: ["A fresh perspective excites a partner.", "Original ideas find backers.", "Mind is active; sleep on time.", "Networking leads to useful contacts."],
+  Pisces: ["Tenderness heals an old grievance.", "Creative work earns appreciation.", "Quiet time restores your energy.", "Steady income; skip risky bets."],
+};
+
+const ELEMENT_DEFAULTS: Record<RashiData["element"], { color: string; number: string }> = {
+  Fire: { color: "Crimson Red", number: "9" },
+  Earth: { color: "Forest Green", number: "6" },
+  Air: { color: "Electric Blue", number: "5" },
+  Water: { color: "Pearl White", number: "2" },
+};
+
 export default function HoroscopeGrid({ onOpenConsultation }: HoroscopeGridProps) {
-  const [selectedElement, setSelectedElement] = useState<string>("All");
-  const [activeRashi, setActiveRashi] = useState<RashiData | null>(null);
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]>("Today");
+  const [selected, setSelected] = useState("Aries");
+  const [mode, setMode] = useState<"moon" | "sun">("moon");
 
   const rashis: RashiData[] = [
     {
@@ -247,219 +288,147 @@ export default function HoroscopeGrid({ onOpenConsultation }: HoroscopeGridProps
     },
   ];
 
-  const filteredRashis =
-    selectedElement === "All"
-      ? rashis
-      : rashis.filter((r) => r.element === selectedElement);
+  // Read the date only on the client so server and client markup match.
+  const today = useSyncExternalStore(
+    () => () => {},
+    () => new Date().toDateString(),
+    () => null
+  );
+
+  const active = rashis.find((r) => r.name === selected) ?? rashis[0];
+  const lines = LINES[active.name] ?? ["", "", "", ""];
+  const ratings = [
+    { label: "Love", value: active.loveScore, line: lines[0] },
+    { label: "Career", value: active.careerScore, line: lines[1] },
+    { label: "Health", value: active.healthScore, line: lines[2] },
+    { label: "Money", value: active.moneyScore, line: lines[3] },
+  ];
+  const luckyColor = active.luckyColor || ELEMENT_DEFAULTS[active.element].color;
+  const luckyNumber = active.luckyNumber || ELEMENT_DEFAULTS[active.element].number;
+  const showDates = mode === "sun";
+  const goKundli = () => document.getElementById("kundli")?.scrollIntoView({ behavior: "smooth" });
+  const d = today ? new Date(today) : null;
+  if (d && period === "Tomorrow") d.setDate(d.getDate() + 1);
+  const dateLabel = !d
+    ? period
+    : period === "Weekly"
+      ? "This week"
+      : period === "Monthly"
+        ? d.toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+        : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <section id="horoscope" className="py-24 relative overflow-hidden bg-[#08090d] border-b border-[#1c1f2a]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-[#d4af37]">
-                Planetary Ephemeris & Transits
-              </span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Daily Horoscope & Rashi Insights
-            </h2>
-            <p className="text-[#8e919e] text-sm sm:text-base mt-2 max-w-xl">
-              Calculated every morning according to planetary transits. Select your Rashi to review today&apos;s career, financial, and relational focus.
-            </p>
-          </div>
-
-          {/* Element Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#101217] border border-[#1e212b]">
-            {["All", "Fire", "Earth", "Air", "Water"].map((elem) => (
-              <button
-                key={elem}
-                onClick={() => setSelectedElement(elem)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  selectedElement === elem
-                    ? "bg-amber-400 text-neutral-950 font-bold shadow-md shadow-amber-400/20"
-                    : "text-[#8e919e] hover:text-white"
-                }`}
-              >
-                {elem}
-              </button>
-            ))}
-          </div>
+    <section id="horoscope" className="section section-alt">
+      <div className="wrap">
+        <div className="mb-8">
+          <h2 className="h-section">Your daily horoscope</h2>
+          <p className="sub mt-2">Pick your {mode === "moon" ? "Moon" : "Sun"} sign to read what the planets say about love, career, health and money.</p>
         </div>
 
-        {/* 12 Rashi Architectural Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          {filteredRashis.map((rashi) => (
-            <div
-              key={rashi.name}
-              onClick={() => setActiveRashi(rashi)}
-              className="luxury-card rounded-2xl p-5 cursor-pointer flex flex-col justify-between group hover:-translate-y-1"
-            >
-              <div>
-                {/* Header row */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#151821] border border-[#232734] flex items-center justify-center text-xl text-[#d4af37] group-hover:border-[#d4af37]/40 transition-colors">
-                    {rashi.symbol}
-                  </div>
-                  <span className="text-[10px] font-semibold text-[#8e919e] bg-[#14161f] border border-[#222532] px-2 py-0.5 rounded">
-                    {rashi.element}
-                  </span>
-                </div>
+        <div className="mb-5">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Sign type">
+            <button type="button" className="chip" aria-pressed={mode === "moon"} onClick={() => setMode("moon")}>Moon sign (Vedic)</button>
+            <button type="button" className="chip" aria-pressed={mode === "sun"} onClick={() => setMode("sun")}>Sun sign (Western)</button>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Vedic astrology reads your Moon sign. Don&apos;t know it?{" "}
+            <button type="button" onClick={goKundli} className="font-semibold text-brand-ink underline underline-offset-2 hover:text-ink">
+              Get it free from your Kundli
+            </button>
+          </p>
+        </div>
 
-                {/* Sign Titles */}
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-1.5">
-                    <h3 className="text-base font-bold text-white group-hover:text-[#d4af37] transition-colors">
-                      {rashi.name}
-                    </h3>
-                    <span className="text-xs text-[#8e919e]">({rashi.sanskrit})</span>
-                  </div>
-                  <p className="text-[11px] text-[#8e919e] mt-0.5">{rashi.dates}</p>
-                </div>
-
-                {/* Status Table */}
-                <div className="grid grid-cols-2 gap-2 text-xs py-2 px-2.5 rounded-xl bg-[#14161f] border border-[#1e212b] mb-3">
-                  <div>
-                    <span className="text-[10px] text-[#8e919e] block">Today</span>
-                    <span className="font-semibold text-white">{rashi.todayRating}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#8e919e] block">Ruler</span>
-                    <span className="font-semibold text-zinc-300 truncate block">{rashi.ruling}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#8e919e] block">Career</span>
-                    <span className="font-semibold text-emerald-400">{rashi.careerScore}%</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#8e919e] block">Love</span>
-                    <span className="font-semibold text-rose-400">{rashi.loveScore}%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Action */}
-              <div className="pt-2 border-t border-[#1c1f2a] flex items-center justify-between text-xs font-medium text-[#8e919e] group-hover:text-[#d4af37]">
-                <span>Read Full Forecast</span>
-                <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
-              </div>
-            </div>
+        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Horoscope period">
+          {PERIODS.map((p) => (
+            <button key={p} type="button" className="chip" aria-pressed={period === p} onClick={() => setPeriod(p)}>
+              {p}
+            </button>
           ))}
         </div>
-      </div>
 
-      {/* Deep Dive Zodiac Modal */}
-      {activeRashi && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative w-full max-w-2xl bg-[#0f1117] border border-[#252936] rounded-2xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveRashi(null)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-lg bg-[#161822] border border-[#232734] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-            >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-xl bg-[#151821] border border-[#2a2f3f] flex items-center justify-center text-3xl text-[#d4af37]">
-                {activeRashi.symbol}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-2xl font-bold text-white">{activeRashi.name}</h3>
-                  <span className="text-sm text-[#8e919e]">({activeRashi.sanskrit})</span>
-                  <span className="text-[10px] font-semibold text-[#8e919e] bg-[#14161f] border border-[#222532] px-2 py-0.5 rounded">
-                    {activeRashi.element} Element
-                  </span>
-                </div>
-                <p className="text-xs text-[#8e919e] mt-1">
-                  Ruling Planet: <span className="text-white font-medium">{activeRashi.ruling}</span> • {activeRashi.dates}
-                </p>
-              </div>
-            </div>
-
-            {/* Today's Forecast Paragraph */}
-            <div className="bg-[#14161f] border border-[#202330] p-5 rounded-xl mb-6">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#d4af37] mb-2">
-                Today&apos;s Astrological Forecast
-              </h4>
-              <p className="text-sm text-zinc-300 leading-relaxed">{activeRashi.prediction}</p>
-            </div>
-
-            {/* 4 Energy Pillars */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <div className="p-3.5 rounded-xl bg-[#14161f] border border-[#202330]">
-                <span className="text-xs text-[#8e919e] block mb-1">Career & Focus</span>
-                <span className="text-lg font-bold text-emerald-400">{activeRashi.careerScore}%</span>
-                <div className="w-full bg-[#1e212d] h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${activeRashi.careerScore}%` }} />
-                </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#14161f] border border-[#202330]">
-                <span className="text-xs text-[#8e919e] block mb-1">Love & Harmony</span>
-                <span className="text-lg font-bold text-rose-400">{activeRashi.loveScore}%</span>
-                <div className="w-full bg-[#1e212d] h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-rose-400 h-full rounded-full" style={{ width: `${activeRashi.loveScore}%` }} />
-                </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#14161f] border border-[#202330]">
-                <span className="text-xs text-[#8e919e] block mb-1">Wealth / Money</span>
-                <span className="text-lg font-bold text-[#d4af37]">{activeRashi.moneyScore}%</span>
-                <div className="w-full bg-[#1e212d] h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-[#d4af37] h-full rounded-full" style={{ width: `${activeRashi.moneyScore}%` }} />
-                </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#14161f] border border-[#202330]">
-                <span className="text-xs text-[#8e919e] block mb-1">Vitality / Health</span>
-                <span className="text-lg font-bold text-sky-400">{activeRashi.healthScore}%</span>
-                <div className="w-full bg-[#1e212d] h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-sky-400 h-full rounded-full" style={{ width: `${activeRashi.healthScore}%` }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Lucky Factors */}
-            <div className="grid grid-cols-3 gap-3 mb-6 p-4 rounded-xl bg-[#14161f] border border-[#202330] text-xs">
-              <div>
-                <span className="text-[#8e919e] block">Lucky Numbers</span>
-                <span className="font-bold text-white text-sm">{activeRashi.luckyNumber}</span>
-              </div>
-              <div>
-                <span className="text-[#8e919e] block">Lucky Color</span>
-                <span className="font-bold text-zinc-200 text-sm">{activeRashi.luckyColor}</span>
-              </div>
-              <div>
-                <span className="text-[#8e919e] block">Lucky Gemstone</span>
-                <span className="font-bold text-[#d4af37] text-sm">{activeRashi.luckyStone}</span>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div className="flex flex-col sm:flex-row gap-3">
+        <div className="scroll-x -mx-4 flex gap-3 px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-12 lg:gap-2 lg:overflow-visible lg:px-0" role="group" aria-label="Zodiac signs">
+          {rashis.map((r) => {
+            const on = r.name === selected;
+            return (
               <button
-                onClick={() => {
-                  const rashiName = activeRashi.name;
-                  setActiveRashi(null);
-                  onOpenConsultation?.(`${rashiName} Specialist Astrologer`);
-                }}
-                className="bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold flex-1 py-3 rounded-xl text-xs sm:text-sm text-center cursor-pointer shadow-md shadow-amber-400/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                key={r.name}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setSelected(r.name)}
+                className={`flex w-[8.25rem] shrink-0 flex-col items-center rounded-2xl border p-3 text-center lg:col-span-1 lg:w-auto ${
+                  on ? "border-brand-hover bg-brand-tint shadow-[0_0_0_2px_var(--brand),0_0_26px_-2px_rgba(217,178,95,0.6)]" : "border-line bg-surface hover:border-line-strong"
+                }`}
               >
-                Consult {activeRashi.name} Specialist Astrologer
+                <span className="flex size-12 items-center justify-center rounded-full border border-line bg-bg-alt text-2xl text-ink" aria-hidden="true">
+                  {r.symbol}&#xFE0E;
+                </span>
+                <span className="mt-2 text-sm font-bold text-ink">{r.name}</span>
+                <span className="text-sm text-ink-2">{r.sanskrit}</span>
+                {showDates && <span className="mt-1 text-[0.8125rem] leading-tight text-muted">{r.dates}</span>}
               </button>
-              <button
-                onClick={() => setActiveRashi(null)}
-                className="px-6 py-3 rounded-xl bg-[#14161f] hover:bg-[#1a1c28] border border-[#202330] hover:border-[#333748] text-zinc-300 font-semibold text-xs transition-colors cursor-pointer"
-              >
-                Close
-              </button>
+            );
+          })}
+        </div>
+
+        <div className="card mt-6 p-5 sm:p-8" aria-live="polite">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="flex size-14 items-center justify-center rounded-full bg-brand-tint text-3xl text-brand-ink" aria-hidden="true">
+              {active.symbol}&#xFE0E;
+            </span>
+            <div>
+              <h3 className="text-xl font-extrabold text-ink">
+                {active.name} <span className="font-semibold text-ink-2">({active.sanskrit})</span> · {period}
+              </h3>
+              <p className="text-sm text-muted">{dateLabel}{showDates ? ` · ${active.dates}` : ""} · Ruled by {active.ruling}</p>
             </div>
           </div>
+
+          <div className="mt-6">
+            <div>
+              <p className="max-w-[65ch] text-base leading-relaxed text-ink-2">{active.prediction}</p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {ratings.map((x) => (
+                  <section key={x.label} aria-label={x.label} className="rounded-xl border border-line bg-surface p-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-ink">{x.label}</h4>
+                      <span className="tag tag-brand tnum">{x.value}%</span>
+                    </div>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line" role="presentation">
+                      <div className="h-full rounded-full" style={{ width: `${x.value}%`, background: "var(--aurora)" }} />
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-2">{x.line}</p>
+                  </section>
+                ))}
+              </div>
+              <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <dt className="text-sm text-muted">Mood</dt>
+                  <dd className="font-semibold text-ink">{active.todayRating}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted">Lucky number</dt>
+                  <dd className="tnum font-semibold text-ink">{luckyNumber}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted">Lucky colour</dt>
+                  <dd className="flex items-center gap-2 font-semibold text-ink">
+                    <span className="size-4 rounded-full border border-line-strong" style={{ background: SWATCH[luckyColor] ?? "var(--brand)" }} aria-hidden="true" />
+                    {luckyColor}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button type="button" className="btn btn-brand">Read full horoscope</button>
+            <button type="button" className="btn btn-outline" onClick={() => onOpenConsultation?.(`${active.name} Specialist Astrologer`)}>
+              Ask an astrologer
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

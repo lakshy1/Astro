@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
 interface ConsultationModalProps {
@@ -8,6 +8,15 @@ interface ConsultationModalProps {
   onClose: () => void;
   astrologerName?: string;
 }
+
+const ASTRO_INFO: Record<string, { image?: string; price: string }> = {
+  "Acharya Sreejita": { image: "/vedic_astrologer_female.jpg", price: "₹30/min" },
+  "Pandit Minesh Shastri": { image: "/vedic_astrologer_male.jpg", price: "₹40/min" },
+  "Dr. Sarika Upadhyay": { image: "/vedic_astrologer_female.jpg", price: "₹50/min" },
+  "Tarot Serena": { image: "/vedic_astrologer_female.jpg", price: "₹25/min" },
+  "Acharya Gaurav": { image: "/vedic_astrologer_male.jpg", price: "₹35/min" },
+  "Pandit Roopa Sharma": { image: "/vedic_astrologer_male.jpg", price: "₹35/min" },
+};
 
 export default function ConsultationModal({
   isOpen,
@@ -22,6 +31,10 @@ export default function ConsultationModal({
   const [inputText, setInputText] = useState("");
   const [typing, setTyping] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(300); // 5 mins free trial
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const info = ASTRO_INFO[astrologerName];
+  const photo = info ? info.image : undefined;
 
   const handleModalClose = () => {
     setStage("intake");
@@ -79,197 +92,188 @@ export default function ConsultationModal({
     }, 1400);
   };
 
+  const closeRef = useRef(handleModalClose);
+  useEffect(() => {
+    closeRef.current = handleModalClose;
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.activeElement as HTMLElement | null;
+    const el = dialogRef.current;
+    const focusables = () =>
+      Array.from(
+        el?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      );
+    (focusables()[1] ?? focusables()[0])?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const f = focusables();
+      if (!f.length) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      const active = document.activeElement;
+      if (!el?.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      prev?.focus?.();
+    };
+  }, [isOpen, stage]);
+
   if (!isOpen) return null;
 
   const minutes = Math.floor(timerSeconds / 60);
   const seconds = timerSeconds % 60;
 
+  const avatar = photo ? (
+    <Image src={photo} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover border border-line shrink-0" />
+  ) : (
+    <div aria-hidden="true" className="w-12 h-12 rounded-full bg-indigo text-white font-bold flex items-center justify-center shrink-0">
+      {astrologerName.charAt(0)}
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-[#0e1017] border border-[#222534] rounded-2xl p-6 sm:p-7 shadow-2xl overflow-hidden">
-        {/* Close Button */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      style={{ background: "rgba(4,2,16,.72)" }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleModalClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="consult-title"
+        className="relative w-full max-w-lg bg-bg-alt rounded-2xl shadow-[0_40px_120px_-30px_rgba(217,178,95,0.35)] border border-line p-5 sm:p-6 max-h-[calc(100dvh-1.5rem)] overflow-y-auto"
+      >
+        <div className="flex items-center gap-3 pr-12">
+          {avatar}
+          <div className="min-w-0">
+            <h2 id="consult-title" className="text-lg font-bold text-ink leading-tight">
+              {astrologerName}
+            </h2>
+            <p className="text-sm text-ink-2 tnum">
+              {info?.price ?? "₹30/min"} · <span className="text-leaf font-medium">First 5 minutes free</span>
+            </p>
+          </div>
+        </div>
         <button
+          type="button"
           onClick={handleModalClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#161822] border border-[#232734] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors z-10"
+          aria-label="Close consultation"
+          className="absolute top-3 right-3 w-11 h-11 rounded-full text-ink-2 hover:bg-bg-alt flex items-center justify-center cursor-pointer"
         >
-          ✕
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
 
         {stage === "intake" ? (
-          <div>
-            {/* Header */}
-            <div className="flex items-center gap-3.5 mb-6">
-              <div className="w-13 h-13 rounded-xl overflow-hidden border border-[#2a2f3f] relative bg-[#151821] shrink-0">
-                <Image
-                  src="/vedic_astrologer_female.jpg"
-                  alt={astrologerName}
-                  width={52}
-                  height={52}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-semibold text-emerald-400">Available Online Now</span>
-                </div>
-                <h3 className="text-base font-bold text-white mt-0.5">{astrologerName}</h3>
-                <p className="text-xs text-[#d4af37]">First 5 Minutes Free Consultation</p>
+          <form onSubmit={handleStartSession} className="mt-5 space-y-4">
+            <div>
+              <label htmlFor="consult-name" className="label">Your name</label>
+              <input
+                id="consult-name"
+                type="text"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Enter your name"
+                className="field"
+              />
+            </div>
+            <div>
+              <label htmlFor="consult-topic" className="label">Topic</label>
+              <select id="consult-topic" value={topic} onChange={(e) => setTopic(e.target.value)} className="field">
+                <option value="Career & Business Direction">Career & Business Direction</option>
+                <option value="Love & Marriage Compatibility">Love & Marriage Compatibility</option>
+                <option value="Financial Growth & Investments">Financial Growth & Investments</option>
+                <option value="Family Peace & Property Matters">Family Peace & Property Matters</option>
+                <option value="Spiritual Guidance & Dosha Remedies">Spiritual Guidance & Dosha Remedies</option>
+              </select>
+            </div>
+            <div>
+              <span className="label" id="consult-mode">Consultation mode</span>
+              <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="consult-mode">
+                <button type="button" className="chip justify-center" aria-pressed={consultType === "chat"} onClick={() => setConsultType("chat")}>
+                  Text chat
+                </button>
+                <button type="button" className="chip justify-center" aria-pressed={consultType === "call"} onClick={() => setConsultType("call")}>
+                  Voice call
+                </button>
               </div>
             </div>
-
-            <form onSubmit={handleStartSession} className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-zinc-300 block mb-1">Your Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full bg-[#14161f] border border-[#222532] focus:border-[#d4af37] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-zinc-300 block mb-1">Primary Topic</label>
-                <select
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  className="w-full bg-[#14161f] border border-[#222532] focus:border-[#d4af37] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
-                >
-                  <option value="Career & Business Direction">Career & Business Direction</option>
-                  <option value="Love & Marriage Compatibility">Love & Marriage Compatibility</option>
-                  <option value="Financial Growth & Investments">Financial Growth & Investments</option>
-                  <option value="Family Peace & Property Matters">Family Peace & Property Matters</option>
-                  <option value="Spiritual Guidance & Dosha Remedies">Spiritual Guidance & Dosha Remedies</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-zinc-300 block mb-1">Consultation Mode</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setConsultType("chat")}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      consultType === "chat"
-                        ? "bg-[#181b25] border-[#d4af37] text-white"
-                        : "bg-[#14161f] border-[#202330] text-[#8e919e]"
-                    }`}
-                  >
-                    <span>💬 Text Chat</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConsultType("call")}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      consultType === "call"
-                        ? "bg-[#181b25] border-[#d4af37] text-white"
-                        : "bg-[#14161f] border-[#202330] text-[#8e919e]"
-                    }`}
-                  >
-                    <span>📞 Voice Call</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#14161f] border border-[#202330] text-[11px] text-[#8e919e] leading-relaxed">
-                🔒 <strong>Confidentiality Guaranteed:</strong> End-to-end encrypted session. Your birth credentials and chat history are never retained.
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs sm:text-sm font-bold cursor-pointer mt-2 shadow-lg shadow-amber-400/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
-              >
-                Connect with Astrologer (Start Free) &rarr;
-              </button>
-            </form>
-          </div>
+            <p className="p-3 rounded-xl bg-bg-alt text-sm text-ink-2">
+              <strong className="text-ink">Private session.</strong> Your birth details and chat history are not retained after the session ends.
+            </p>
+            <button type="submit" className="btn btn-brand btn-lg w-full">
+              Start free consultation
+            </button>
+          </form>
         ) : (
-          /* Live Chat Simulation Stage */
-          <div className="flex flex-col h-[500px]">
-            {/* Live Chat Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#1e212b]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg overflow-hidden border border-[#2a2f3f]">
-                  <Image
-                    src="/vedic_astrologer_female.jpg"
-                    alt={astrologerName}
-                    width={36}
-                    height={36}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">{astrologerName}</h4>
-                  <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Online • Answering
-                  </span>
-                </div>
-              </div>
-
-              {/* Free Trial Timer */}
-              <div className="text-right">
-                <span className="text-[10px] text-[#8e919e] block">Free Session Remaining</span>
-                <span className="text-sm font-mono font-bold text-[#d4af37]">
+          <div className="flex flex-col h-[460px] max-h-[65dvh] mt-4">
+            <div className="flex items-center justify-between pb-3 border-b border-line text-sm">
+              <span className="inline-flex items-center gap-2 text-leaf font-medium">
+                <span className="dot-live" aria-hidden="true" />
+                Online
+              </span>
+              <span className="text-ink-2">
+                Free time left{" "}
+                <span className="font-bold text-ink tnum" role="timer">
                   {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
                 </span>
-              </div>
+              </span>
             </div>
 
-            {/* Chat Messages Feed */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 text-xs">
+            <div className="flex-1 overflow-y-auto py-4 space-y-3" aria-live="polite">
               {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
+                <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[85%] p-3 rounded-xl ${
-                      msg.sender === "user"
-                        ? "bg-[#d4af37] text-[#08090d] font-medium rounded-tr-none"
-                        : "bg-[#14161f] text-zinc-200 border border-[#202330] rounded-tl-none leading-relaxed"
+                    className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-[15px] leading-relaxed text-ink ${
+                      msg.sender === "user" ? "bg-brand-tint rounded-tr-sm" : "bg-bg-alt rounded-tl-sm"
                     }`}
                   >
                     <p>{msg.text}</p>
-                    <span
-                      className={`text-[9px] mt-1 block text-right ${
-                        msg.sender === "user" ? "text-black/60" : "text-[#8e919e]"
-                      }`}
-                    >
-                      {msg.time}
-                    </span>
+                    <span className="text-sm text-muted block text-right mt-1">{msg.time}</span>
                   </div>
                 </div>
               ))}
-
               {typing && (
-                <div className="flex items-center gap-2 text-[#8e919e] text-xs py-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-bounce" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] animate-bounce [animation-delay:0.4s]" />
-                  <span className="text-[11px] text-[#8e919e]">{astrologerName} is reviewing your chart...</span>
-                </div>
+                <p className="text-sm text-muted py-1">{astrologerName} is typing…</p>
               )}
             </div>
 
-            {/* Chat Input Bar */}
-            <form onSubmit={handleSendMessage} className="pt-3 border-t border-[#1e212b] flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="pt-3 border-t border-line flex items-center gap-2">
+              <label htmlFor="consult-msg" className="sr-only">Your message</label>
               <input
+                id="consult-msg"
                 type="text"
-                placeholder="Type your query regarding career, relationships, remedies..."
+                placeholder="Type your question"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="flex-1 bg-[#14161f] border border-[#222532] focus:border-[#d4af37] rounded-xl px-3.5 py-2 text-xs text-white placeholder-[#8e919e] focus:outline-none"
+                className="field flex-1"
               />
-              <button
-                type="submit"
-                className="bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shadow-md shadow-amber-400/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Send
-              </button>
+              <button type="submit" className="btn btn-brand">Send</button>
             </form>
           </div>
         )}

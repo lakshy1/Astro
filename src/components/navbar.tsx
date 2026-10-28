@@ -1,370 +1,145 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 interface NavbarProps {
   onOpenConsultation?: (astrologerName?: string) => void;
   onScrollToSection?: (sectionId: string) => void;
 }
 
-export default function Navbar({ onOpenConsultation, onScrollToSection }: NavbarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLang, setSelectedLang] = useState("EN");
+const LINKS = [
+  { id: "astrologers", label: "Astrologers" },
+  { id: "horoscope", label: "Horoscope" },
+  { id: "kundli", label: "Free Kundli" },
+  { id: "love", label: "Kundli Matching" },
+  { id: "tarot", label: "Tarot" },
+  { id: "panchang", label: "Panchang" },
+  { id: "blog", label: "Blog" },
+];
 
-  const handleNavClick = (sectionId: string) => {
-    setMobileMenuOpen(false);
-    setActiveDropdown(null);
-    if (onScrollToSection) {
-      onScrollToSection(sectionId);
-    } else {
-      const el = document.getElementById(sectionId);
-      el?.scrollIntoView({ behavior: "smooth" });
-    }
+export function Logo() {
+  const id = useId();
+  return (
+    <span className="flex items-center gap-2.5 font-display text-[1.6rem] font-semibold tracking-tight text-ink">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#f6e3a8" />
+            <stop offset=".5" stopColor="#d9b25f" />
+            <stop offset="1" stopColor="#a8792f" />
+          </linearGradient>
+        </defs>
+        {/* Zodiac wheel: outer ring, 12 ticks, eight-point star */}
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke={`url(#${id})`} strokeWidth="1.3" />
+        <circle cx="16" cy="16" r="11" fill="none" stroke={`url(#${id})`} strokeWidth="0.7" opacity="0.7" />
+        {Array.from({ length: 12 }, (_, i) => {
+          const a = (i * Math.PI) / 6;
+          const p = (r: number, f: (x: number) => number) => (16 + f(a) * r).toFixed(2);
+          return (
+            <line key={i} x1={p(11, Math.cos)} y1={p(11, Math.sin)} x2={p(14.5, Math.cos)} y2={p(14.5, Math.sin)} stroke={`url(#${id})`} strokeWidth="0.8" />
+          );
+        })}
+        <path d="M16 6.5l1.7 6.1 6.1-1.6-4.4 4.6 4.4 4.6-6.1-1.6L16 24.7l-1.7-6.1-6.1 1.6 4.4-4.6-4.4-4.6 6.1 1.6Z" fill={`url(#${id})`} />
+      </svg>
+      AstroSpace
+    </span>
+  );
+}
+
+export default function Navbar({ onOpenConsultation, onScrollToSection }: NavbarProps) {
+  const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState<"EN" | "HI">("EN");
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const go = (id: string) => {
+    setOpen(false);
+    onScrollToSection?.(id);
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
-      {/* Top Utility Micro-Bar */}
-      <div className="bg-[#0b0c10] border-b border-[#1a1d26] py-1 px-4 sm:px-8 text-[11px] text-[#8e919e] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-zinc-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="font-medium">3,420 Astrologers Online</span>
-          </span>
-          <span className="hidden md:inline text-zinc-600">|</span>
-          <span className="hidden md:inline">First 5-Min Consultation Free for New Users</span>
-        </div>
+    <header className={`fixed inset-x-0 top-0 z-50 transition-colors ${scrolled ? "bg-bg/75 backdrop-blur-xl shadow-[0_1px_0_var(--line)]" : "bg-transparent"}`}>
+      <div className="wrap flex h-[4.25rem] items-center gap-6">
+        <a
+          href="#hero"
+          onClick={(e) => {
+            e.preventDefault();
+            go("hero");
+          }}
+          aria-label="AstroSpace home"
+        >
+          <Logo />
+        </a>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setSelectedLang(selectedLang === "EN" ? "HI" : "EN")}
-              className="text-zinc-300 hover:text-white transition-colors cursor-pointer font-medium flex items-center gap-1"
+        <nav aria-label="Primary" className="hidden lg:flex items-center gap-0.5 ml-2">
+          {LINKS.map((l) => (
+            <a
+              key={l.id}
+              href={`#${l.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                go(l.id);
+              }}
+              className="rounded-full px-3 py-2 text-[0.9rem] font-semibold text-ink-2 hover:bg-bg-alt hover:text-ink"
             >
-              <span>{selectedLang === "EN" ? "🇮🇳 English" : "🇮🇳 हिन्दी"}</span>
-              <svg className="w-3 h-3 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-          <span className="text-zinc-600">|</span>
+              {l.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={() => onOpenConsultation?.("Customer Support")}
-            className="hover:text-white transition-colors cursor-pointer"
+            onClick={() => setLang(lang === "EN" ? "HI" : "EN")}
+            className="hidden sm:grid h-10 min-w-10 place-items-center rounded-full px-3 text-sm font-bold text-ink-2 hover:bg-bg-alt"
+            aria-label={`Language: ${lang === "EN" ? "English" : "Hindi"}. Switch language`}
           >
-            24/7 Care
+            {lang === "EN" ? "EN" : "हि"}
+          </button>
+          <span className="hidden md:inline-flex">
+            <button className="btn btn-outline">Sign in</button>
+          </span>
+          <button className="btn btn-brand" onClick={() => onOpenConsultation?.()}>
+            Chat free
+          </button>
+          <button
+            className="lg:hidden grid h-11 w-11 place-items-center rounded-full hover:bg-bg-alt"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {open ? <path d="M5 5l12 12M17 5 5 17" /> : <path d="M3 6h16M3 11h16M3 16h16" />}
+            </svg>
           </button>
         </div>
       </div>
 
-      {/* Main Glassmorphic Navigation Bar */}
-      <nav className="backdrop-blur-xl bg-[#08090d]/90 border-b border-[#1c1f2a] px-4 sm:px-8 h-18 flex items-center justify-between gap-4">
-        {/* Brand Lockup */}
-        <div className="flex items-center gap-8">
-          <button
-            onClick={() => handleNavClick("hero")}
-            className="flex items-center gap-3 text-left group cursor-pointer"
-          >
-            {/* Custom Architectural Astrolabe Logo SVG */}
-            <div className="w-9 h-9 rounded-xl bg-[#12141c] border border-[#262a38] flex items-center justify-center text-[#d4af37] shadow-inner group-hover:border-[#d4af37]/60 transition-colors">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="12" cy="12" r="9" />
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
-                <path d="M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12" />
-              </svg>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold tracking-tight text-white group-hover:text-[#d4af37] transition-colors">
-                  AstroTalk
-                </span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.2 rounded border border-[#d4af37]/25">
-                  Prime
-                </span>
-              </div>
-              <p className="text-[10px] text-[#8e919e] hidden sm:block tracking-normal">
-                Vedic Astrology & Guidance
-              </p>
-            </div>
-          </button>
-
-          {/* Desktop Nav Links with Refined Dropdowns */}
-          <div className="hidden xl:flex items-center gap-1">
-            {/* Dropdown 1: Consultations */}
-            <div
-              className="relative"
-              onMouseEnter={() => setActiveDropdown("consultations")}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button
-                onClick={() => handleNavClick("astrologers")}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors flex items-center gap-1 cursor-pointer ${
-                  activeDropdown === "consultations" ? "text-white bg-white/[0.04]" : "text-[#b0b3bf] hover:text-white"
-                }`}
+      {open && (
+        <nav id="mobile-nav" aria-label="Mobile" className="lg:hidden border-t border-line bg-bg/95 backdrop-blur-xl">
+          <div className="wrap flex flex-col py-2">
+            {LINKS.map((l) => (
+              <a
+                key={l.id}
+                href={`#${l.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  go(l.id);
+                }}
+                className="border-b border-line py-3.5 font-semibold"
               >
-                <span>Consultations</span>
-                <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {activeDropdown === "consultations" && (
-                <div className="absolute top-full left-0 pt-2 w-72">
-                  <div className="bg-[#101218] border border-[#222532] rounded-2xl p-2 shadow-2xl backdrop-blur-2xl">
-                    <button
-                      onClick={() => {
-                        setActiveDropdown(null);
-                        onOpenConsultation?.();
-                      }}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#181a24] transition-colors flex items-start gap-3 group"
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-[#181b24] border border-[#282d3d] flex items-center justify-center text-sm shrink-0">
-                        💬
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-white group-hover:text-[#d4af37]">Chat with Astrologer</p>
-                          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 rounded">FREE</span>
-                        </div>
-                        <p className="text-[11px] text-[#8e919e] mt-0.5">Instant live chat with verified gurus</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setActiveDropdown(null);
-                        onOpenConsultation?.();
-                      }}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#181a24] transition-colors flex items-start gap-3 group"
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-[#181b24] border border-[#282d3d] flex items-center justify-center text-sm shrink-0">
-                        📞
-                      </span>
-                      <div>
-                        <p className="text-xs font-semibold text-white group-hover:text-[#d4af37]">Talk / Voice Call</p>
-                        <p className="text-[11px] text-[#8e919e] mt-0.5">Direct phone connection with Vedic pandits</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick("astrologers")}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#181a24] transition-colors flex items-start gap-3 group"
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-[#181b24] border border-[#282d3d] flex items-center justify-center text-sm shrink-0">
-                        ⭐
-                      </span>
-                      <div>
-                        <p className="text-xs font-semibold text-white group-hover:text-[#d4af37]">Celebrity Astrologers</p>
-                        <p className="text-[11px] text-[#8e919e] mt-0.5">Consult top-rated spiritual authorities</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Dropdown 2: Horoscopes */}
-            <div
-              className="relative"
-              onMouseEnter={() => setActiveDropdown("horoscopes")}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button
-                onClick={() => handleNavClick("horoscope")}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors flex items-center gap-1 cursor-pointer ${
-                  activeDropdown === "horoscopes" ? "text-white bg-white/[0.04]" : "text-[#b0b3bf] hover:text-white"
-                }`}
-              >
-                <span>Horoscopes</span>
-                <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {activeDropdown === "horoscopes" && (
-                <div className="absolute top-full left-0 pt-2 w-64">
-                  <div className="bg-[#101218] border border-[#222532] rounded-2xl p-2 shadow-2xl backdrop-blur-2xl">
-                    <button
-                      onClick={() => handleNavClick("horoscope")}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#181a24] transition-colors"
-                    >
-                      <p className="text-xs font-semibold text-white">Daily 12 Rashi Forecast</p>
-                      <p className="text-[11px] text-[#8e919e]">Updated daily at sunrise</p>
-                    </button>
-                    <button
-                      onClick={() => handleNavClick("horoscope")}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#181a24] transition-colors"
-                    >
-                      <p className="text-xs font-semibold text-white">Planetary Ephemeris 2026</p>
-                      <p className="text-[11px] text-[#8e919e]">Major Saturn & Jupiter transits</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Link 3: Free Kundli */}
-            <button
-              onClick={() => handleNavClick("kundli")}
-              className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wide text-[#b0b3bf] hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              Free Kundli
-            </button>
-
-            {/* Link 4: 3D Tarot */}
-            <button
-              onClick={() => handleNavClick("tarot")}
-              className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wide text-[#b0b3bf] hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              3D Tarot Studio
-            </button>
-
-            {/* Link 5: Love Compatibility */}
-            <button
-              onClick={() => handleNavClick("love")}
-              className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wide text-[#b0b3bf] hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              Love Match
-            </button>
-
-            {/* Link 6: Panchang */}
-            <button
-              onClick={() => handleNavClick("panchang")}
-              className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wide text-[#b0b3bf] hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              Today&apos;s Panchang
-            </button>
+                {l.label}
+              </a>
+            ))}
+            <button className="btn btn-outline mt-4">Sign in</button>
           </div>
-        </div>
-
-        {/* Right Action Tools */}
-        <div className="flex items-center gap-3">
-          {/* Search Trigger */}
-          <button
-            onClick={() => setSearchOpen(!searchOpen)}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#12141c] border border-[#222532] text-xs text-[#8e919e] hover:border-[#383d4f] hover:text-zinc-200 transition-all cursor-pointer"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span>Search Gurus & Tools...</span>
-            <kbd className="text-[10px] bg-[#1a1d28] px-1.5 py-0.5 rounded border border-[#282d3e] text-zinc-400 font-mono">
-              ⌘K
-            </kbd>
-          </button>
-
-          {/* Primary CTA Button */}
-          <button
-            onClick={() => onOpenConsultation?.()}
-            className="shrink-0 whitespace-nowrap bg-amber-400 hover:bg-amber-300 text-neutral-950 font-extrabold px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm tracking-wide cursor-pointer flex items-center gap-2 shadow-md shadow-amber-400/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" />
-            <span>Talk to Astrologer</span>
-            <svg className="w-3.5 h-3.5 text-neutral-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          {/* Mobile / Tablet Hamburger Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-lg bg-[#12141c] border border-[#222532] text-zinc-300 hover:text-white"
-            aria-label="Toggle menu"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      {/* Instant Search Overlay */}
-      {searchOpen && (
-        <div className="bg-[#0c0d12]/98 border-b border-[#222532] px-4 py-3 sm:px-8">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <svg className="w-4 h-4 text-[#8e919e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              autoFocus
-              placeholder="Search by astrologer name (e.g. Sreejita, Minesh), sign (Aries, Leo), or service (Kundli, Tarot)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-white placeholder-[#8e919e] focus:outline-none"
-            />
-            <button
-              onClick={() => setSearchOpen(false)}
-              className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded bg-[#181a24]"
-            >
-              ESC
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="xl:hidden bg-[#0c0d12]/98 border-b border-[#222532] p-5 space-y-4 backdrop-blur-2xl">
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              onClick={() => handleNavClick("astrologers")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              💬 Consult Astrologers
-            </button>
-            <button
-              onClick={() => handleNavClick("horoscope")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              ♈ Daily Horoscope
-            </button>
-            <button
-              onClick={() => handleNavClick("kundli")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              📜 Free Kundli
-            </button>
-            <button
-              onClick={() => handleNavClick("tarot")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              🔮 3D Tarot Studio
-            </button>
-            <button
-              onClick={() => handleNavClick("love")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              ❤️ Love Matcher
-            </button>
-            <button
-              onClick={() => handleNavClick("panchang")}
-              className="p-3 rounded-xl bg-[#12141c] border border-[#222532] text-left font-medium text-zinc-200"
-            >
-              🪐 Daily Panchang
-            </button>
-          </div>
-
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onOpenConsultation?.();
-            }}
-            className="w-full py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-bold text-center shadow-lg shadow-amber-400/20 cursor-pointer"
-          >
-            Start Free 5-Min Consultation
-          </button>
-        </div>
+        </nav>
       )}
     </header>
   );

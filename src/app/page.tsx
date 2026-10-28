@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import CelestialCanvas from "@/components/celestial-canvas";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/navbar";
 import Hero from "@/components/hero";
 import Astrologers from "@/components/astrologers";
@@ -12,12 +11,42 @@ import LoveCalculator from "@/components/love-calculator";
 import Panchang from "@/components/panchang";
 import Services from "@/components/services";
 import Blog from "@/components/blog";
+import Categories from "@/components/categories";
+import Testimonials from "@/components/testimonials";
+import Faq from "@/components/faq";
 import Footer from "@/components/footer";
 import ConsultationModal from "@/components/consultation-modal";
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeAstrologer, setActiveAstrologer] = useState("Acharya Sreejita");
+
+
+  // 3D tilt + pointer sheen for every interactive card (.card-hover)
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
+    let current: HTMLElement | null = null;
+    const reset = (el: HTMLElement) => {
+      el.style.removeProperty("--rx");
+      el.style.removeProperty("--ry");
+    };
+    const onMove = (e: PointerEvent) => {
+      const el = (e.target as HTMLElement).closest<HTMLElement>(".card-hover");
+      if (current && current !== el) reset(current);
+      current = el;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      const max = Math.max(2, 9 - r.width / 80);
+      el.style.setProperty("--ry", `${(x - 0.5) * max}deg`);
+      el.style.setProperty("--rx", `${(0.5 - y) * max}deg`);
+      el.style.setProperty("--mx", `${x * 100}%`);
+      el.style.setProperty("--my", `${y * 100}%`);
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => document.removeEventListener("pointermove", onMove);
+  }, []);
 
   const handleOpenConsultation = (astrologerName?: string) => {
     if (astrologerName) {
@@ -36,10 +65,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#08090d] text-[#ededef] selection:bg-[#d4af37] selection:text-[#08090d]">
-      {/* 3D Celestial Background Particle & Constellation Canvas */}
-      <CelestialCanvas />
-
+    <div className="relative min-h-screen">
       {/* Floating Sticky Navigation Bar */}
       <Navbar
         onOpenConsultation={handleOpenConsultation}
@@ -47,38 +73,35 @@ export default function Home() {
       />
 
       <main className="relative z-10 flex flex-col">
-        {/* 1. 3D Interactive Hero Section */}
         <Hero
           onOpenConsultation={handleOpenConsultation}
           onScrollToSection={handleScrollToSection}
         />
 
-        {/* 2. Verified Astrologers Directory & Live Filters */}
         <Astrologers onOpenConsultation={handleOpenConsultation} />
 
-        {/* 3. Daily Horoscope & 3D Zodiac Deep-Dive Explorer */}
+        <Categories onOpenConsultation={handleOpenConsultation} />
+
         <HoroscopeGrid onOpenConsultation={handleOpenConsultation} />
 
-        {/* 4. 3D Interactive Tarot Studio (Flip Cards) */}
-        <TarotInteractive onOpenConsultation={handleOpenConsultation} />
-
-        {/* 5. Authentic Free Vedic Kundli Generator (D1 Diamond Chart) */}
         <KundliGenerator onOpenConsultation={handleOpenConsultation} />
 
-        {/* 6. Zodiac Love & Compatibility Synastry Meter */}
         <LoveCalculator onOpenConsultation={handleOpenConsultation} />
 
-        {/* 7. Daily Panchang & Shubh Muhurat Times */}
+        <TarotInteractive onOpenConsultation={handleOpenConsultation} />
+
         <Panchang />
 
-        {/* 8. Sacred Astrological Services */}
         <Services
           onScrollToSection={handleScrollToSection}
           onOpenConsultation={handleOpenConsultation}
         />
 
-        {/* 9. Astrological Journal & Wisdom Guides */}
+        <Testimonials />
+
         <Blog />
+
+        <Faq />
       </main>
 
       {/* 10. Comprehensive Footer */}

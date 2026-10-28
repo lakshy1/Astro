@@ -1,33 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const display = Cormorant_Garamond({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Astro | India's Leading Astrology & Horoscope Platform",
+  title: "AstroSpace | Chat with verified astrologers, free Kundli & daily horoscope",
   description:
-    "Connect with verified astrologers 24/7. Get accurate daily horoscope, free Kundli, tarot readings, and spiritual guidance.",
+    "Chat or call 50,000+ verified Vedic astrologers. First chat free. Free Kundli, Kundli matching, daily horoscope and Panchang.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${display.variable} ${jakarta.variable} h-full`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
