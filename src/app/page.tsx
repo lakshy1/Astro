@@ -14,6 +14,7 @@ import Blog from "@/components/blog";
 import Categories from "@/components/categories";
 import Testimonials from "@/components/testimonials";
 import Faq from "@/components/faq";
+import HoroscopeChatbot from "@/components/horoscope-chatbot";
 import Footer from "@/components/footer";
 import ConsultationModal from "@/components/consultation-modal";
 
@@ -109,6 +110,8 @@ export default function Home() {
         onScrollToSection={handleScrollToSection}
         onOpenConsultation={handleOpenConsultation}
       />
+
+      <HoroscopeChatbot />
 
       {/* Global Interactive Consultation & Live Chat Simulation Modal */}
       <ConsultationModal

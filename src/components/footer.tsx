@@ -41,7 +41,7 @@ export default function Footer({ onScrollToSection, onOpenConsultation }: Footer
   const link = "text-ink-2 hover:text-white transition-colors cursor-pointer text-sm min-h-9 inline-flex items-center text-left";
 
   return (
-    <footer className="border-t border-line bg-indigo text-white pt-14 pb-8">
+    <footer className="border-t border-line bg-[rgba(4,7,22,0.6)] text-white pt-14 pb-8">
       <div className="wrap">
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 pb-10">
           <div className="col-span-2">
